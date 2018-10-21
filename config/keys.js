@@ -1,3 +1,4 @@
 module.exports = {
-    mongoURI: 'mongodb://localhost/simplesedb'
-}
+  mongoURI: "mongodb://localhost/simplesedb",
+  jwtSecret: "secret"
+};
