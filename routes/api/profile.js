@@ -221,7 +221,7 @@ router.post('/education/:edu_id', passport.authenticate('jwt', { session: false 
                 .indexOf(req.params.edu_id);
 
             //Splice out of array
-            profile.experience.splice(removeIndex, 1);
+            profile.education.splice(removeIndex, 1);
 
             //Save
             profile.save().then(profile => res.json(profile));
