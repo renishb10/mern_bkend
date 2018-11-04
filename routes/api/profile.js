@@ -11,6 +11,7 @@ const Profile = require('../../models/Profile');
 //Load Validation
 const validateUserProfileInput = require('../../validators/profile');
 const validateExperienceInput = require('../../validators/experience');
+const validateEducationInput = require('../../validators/education');
 
 // @route   GET api/profile
 // @desc    Gets current user profile
@@ -174,6 +175,58 @@ router.post('/experience', passport.authenticate('jwt', { session: false }), (re
             //Save profile
             profile.save().then(profile => res.json(profile));
         })
+});
+
+// @route   POST api/profile/education
+// @desc    Adds education to profile
+// @access  Private
+router.post('/education', passport.authenticate('jwt', { session: false }), (req, res) => {
+    //Validate the request
+    const { errors, isValid } = validateEducationInput(req.body);
+    if (!isValid) {
+        return res.status(400).json(errors);
+    }
+
+
+    Profile.findOne({ user: req.user.id })
+        .then(profile => {
+            const newEdu = {
+                school: req.body.school,
+                degree: req.body.degree,
+                fieldofstudy: req.body.fieldofstudy,
+                from: req.body.from,
+                to: req.body.to,
+                description: req.body.description,
+                current: req.body.current
+            };
+
+            //Add to exp array
+            profile.education.unshift(newEdu);
+
+            //Save profile
+            profile.save().then(profile => res.json(profile));
+        })
+});
+
+// @route   DELETE api/profile/education/:edu_id
+// @desc    Deletes education from profile
+// @access  Private
+router.post('/education/:edu_id', passport.authenticate('jwt', { session: false }), (req, res) => {
+    
+    Profile.findOne({ user: req.user.id })
+        .then(profile => {
+            //Get remove index
+            const removeIndex = profile.education
+                .map(item => item.id)
+                .indexOf(req.params.edu_id);
+
+            //Splice out of array
+            profile.experience.splice(removeIndex, 1);
+
+            //Save
+            profile.save().then(profile => res.json(profile));
+        })
+        .catch(err => res.status(404).json(err));
 });
 
 module.exports = router;
