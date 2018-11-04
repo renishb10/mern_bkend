@@ -10,6 +10,7 @@ const Profile = require('../../models/Profile');
 
 //Load Validation
 const validateUserProfileInput = require('../../validators/profile');
+const validateExperienceInput = require('../../validators/experience');
 
 // @route   GET api/profile
 // @desc    Gets current user profile
@@ -34,7 +35,7 @@ router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => 
 // @route   GET api/profile/handle/:handle
 // @desc    Get profile by handle
 // @access  Public
-router.get('/handle/:handle', (res, req) => {
+router.get('/handle/:handle', (req, res) => {
     const errors = {};
     Profile.findOne({ handle: req.params.handle })
         .populate('user', ['name', 'avatar'])
@@ -44,6 +45,40 @@ router.get('/handle/:handle', (res, req) => {
                 return res.status(404).json(errors);
             }
             res.json(profile);
+        })
+        .catch(err => res.status(404).json(err));
+});
+
+// @route   GET api/profile/user/:user_id
+// @desc    Get profile by user id
+// @access  Public
+router.get('/user/:user_id', (req, res) => {
+    const errors = {};
+    Profile.findOne({ user: req.params.user_id })
+        .populate('user', ['name', 'avatar'])
+        .then(profile => {
+            if(!profile) {
+                errors.noprofile = 'There is no profile for this user';
+                return res.status(404).json(errors);
+            }
+            res.json(profile);
+        })
+        .catch(err => res.status(404).json(err));
+});
+
+// @route   GET api/profile/all
+// @desc    Get all profiles
+// @access  Public
+router.get('/all', (req, res) => {
+    const errors = {};
+    Profile.find()
+        .populate('user', ['name', 'avatar'])
+        .then(profiles => {
+            if(!profiles) {
+                errors.noprofile = 'There are no profiles';
+                return res.status(404).json(errors);
+            }
+            res.json(profiles);
         })
         .catch(err => res.status(404).json(err));
 });
@@ -107,6 +142,37 @@ router.post('/', passport.authenticate('jwt', { session: false }), (req, res) =>
                     new Profile(profileFields).save().then(profile => res.json(profile));
                 })
             }
+        })
+});
+
+// @route   POST api/profile/experience
+// @desc    Adds experience to profile
+// @access  Private
+router.post('/experience', passport.authenticate('jwt', { session: false }), (req, res) => {
+    //Validate the request
+    const { errors, isValid } = validateExperienceInput(req.body);
+    if (!isValid) {
+        return res.status(400).json(errors);
+    }
+
+
+    Profile.findOne({ user: req.user.id })
+        .then(profile => {
+            const newExp = {
+                title: req.body.title,
+                company: req.body.company,
+                location: req.body.location,
+                from: req.body.from,
+                to: req.body.to,
+                description: req.body.description,
+                current: req.body.current
+            };
+
+            //Add to exp array
+            profile.experience.unshift(newExp);
+
+            //Save profile
+            profile.save().then(profile => res.json(profile));
         })
 });
 
