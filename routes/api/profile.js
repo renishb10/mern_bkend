@@ -8,6 +8,9 @@ const User = require('../../models/User');
 //Load Profile Model
 const Profile = require('../../models/Profile');
 
+//Load Validation
+const validateUserProfileInput = require('../../validators/profile');
+
 // @route   GET api/profile
 // @desc    Gets current user profile
 // @access  Private
@@ -15,6 +18,7 @@ router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => 
     const errors = {};
 
     Profile.findOne({ user: req.user.id })
+        .populate('user', ['name', 'avatar'])
         .then(profile => {
             if(!profile) {
                 errors.noprofile = "There is no profile for this user";
@@ -27,10 +31,33 @@ router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => 
         })
 });
 
+// @route   GET api/profile/handle/:handle
+// @desc    Get profile by handle
+// @access  Public
+router.get('/handle/:handle', (res, req) => {
+    const errors = {};
+    Profile.findOne({ handle: req.params.handle })
+        .populate('user', ['name', 'avatar'])
+        .then(profile => {
+            if(!profile) {
+                errors.noprofile = 'There is no profile for this user';
+                return res.status(404).json(errors);
+            }
+            res.json(profile);
+        })
+        .catch(err => res.status(404).json(err));
+});
+
 // @route   POST api/profile
 // @desc    Create or Edit user profile
 // @access  Private
 router.post('/', passport.authenticate('jwt', { session: false }), (req, res) => {
+    //Validate the request
+    const { errors, isValid } = validateUserProfileInput(req.body);
+    if (!isValid) {
+        return res.status(400).json(errors);
+    }
+
     //Get fields
     const profileFields = {};
     profileFields.user = req.user.id;
@@ -69,7 +96,6 @@ router.post('/', passport.authenticate('jwt', { session: false }), (req, res) =>
             }
             else {
                 //Create
-
                 //Check if handle exists
                 Profile.findOne({ handle: profileFields.handle }).then(profile => {
                     if (profile) {
