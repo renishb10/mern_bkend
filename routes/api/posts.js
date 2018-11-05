@@ -80,12 +80,15 @@ router.post('/like/:id', passport.authenticate('jwt', { session: false }), (req,
             Post.findById(req.params.id)
                 .then(post => {
                     //Check for post owner
-                    if(post.user.toString() !== req.user.id) {
-                        return res.status(401).json({ notauthorized: 'User not authorized' });
+                    if(post.likes.filter(like => like.user.toString() === req.user.id).length > 0) {
+                        return res.status(400).json({ alreadyliked: 'User already like this post' });
                     }
 
-                    //Delete Post
-                    post.remove().then(() => res.json({ success: true }));
+                    //Add Post Like
+                    post.likes.unshift({ user: req.user.id });
+
+                    //Save like
+                    post.save().then(post => res.json(post));
                 })
                 .catch(err => res.status(404).json({ postnotfound: 'No post found' }));
         })
