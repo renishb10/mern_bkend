@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const passport = require("passport");
+const cors = require("cors");
 
 //Import route files
 const users = require("./routes/api/users");
@@ -13,6 +14,9 @@ const app = express();
 //Use Body Parser
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
+//Add CORS
+app.use(cors());
 
 //DB Config
 const db = require("./config/keys").mongoURI;
